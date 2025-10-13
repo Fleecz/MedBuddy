@@ -29,3 +29,5 @@
 #Sonstiges
 - wählt bei watch "ignore" aus, dann bekommt ihr keine emails mehr bei Pull Requests
 a
+
+Leon ist ein sehr guter Autofahrer
