@@ -8,3 +8,6 @@ Allgemein
 - nach gemeinsamer Absprache fügen wir das dann zur main branch hinzu
 - die main branch ist geschützt, und Pull Requests müssen erst durch 2 Leute akzeptiert werden
 - wählt bei watch "ignore" aus, dann bekommt ihr keine emails mehr
+Bei Pull Requests
+- base ist immer main
+- compare ist die branch aus der ihr gearbeitet habt
