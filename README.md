@@ -12,6 +12,9 @@
 ##Branch aktualisieren per Terminal
 - Unbedingt vor jedem Weiterarbeiten machen, um      
   Merge-Konflikte zu verhindern:
+   - git switch main
+   - git pull
+   - dann wieder zu euerer branch switchen
     - git fetch origin
     - git rebase origin/main
 #Commiten auf GitHub im Terminal
