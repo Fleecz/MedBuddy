@@ -1,6 +1,6 @@
 #Zum Thema Branches:
-- bitte arbeitet mit branchen & nicht auf der main branch
-- legt die dann passend zum feature an
+- bitte arbeitet mit branches & nicht auf der main branch
+- legt diese dann passend zum feature an
 - Syntax für eigene Branch und wechseln: git checkout -b name
     - nennt die 1. einfach wie euch und macht dann Unterbranches zu den passenden Funktionen
 - aktuelle Branches sind anzeigbar mit git branch
