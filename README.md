@@ -28,3 +28,4 @@
 - compare ist die branch aus der ihr gearbeitet habt
 #Sonstiges
 - wählt bei watch "ignore" aus, dann bekommt ihr keine emails mehr bei Pull Requests
+a
