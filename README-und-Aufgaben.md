@@ -1,0 +1,7 @@
+- bitte arbeitet mit branchen und nicht auf der main branch
+- legt die dan passend zum feature an
+- Syntax für eigene Branch: git checkout -b <name>
+- kann auch verzweigter Pfad sein
+- commitet darauf die Änderungen und wenn das fertig ist macht ihr auf GitHub eine Pull Request mit Beschreibung und Reviewer
+- Nach gemeinsamer Absprache fügen wir das dann zur main branch hinzu
+    - die main branch ist geschützt, und die Pull Request muss erst von 2 Leuten akzeptiert werden  
