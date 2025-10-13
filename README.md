@@ -11,3 +11,4 @@ Allgemein
 Bei Pull Requests
 - base ist immer main
 - compare ist die branch aus der ihr gearbeitet habt
+Leon ist ein sehr guter Autofahrer
