@@ -6,12 +6,18 @@ if (!isset($_SESSION["loggedin"])) {
 }
 ?>
 <!DOCTYPE html>
+<html lang="de">
 <head>
-    <nav>
-        <a href="./activities.php">Aktivitätenübersicht</a>
-    </nav>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
 </head>
-    <body>
-        <p>grober Tets</p>
-    </body>
+<body>
+<nav>
+    <a href="./activities.php">Aktivitäten</a>
+    <a href="./calendar.php">Kalender</a>
+    <a href="./logout.php">Logout</a>
+</nav>
+<h1>Dashboard</h1>
+<p>Willkommen bei MedBuddy.</p>
+</body>
 </html>

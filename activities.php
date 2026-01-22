@@ -90,6 +90,7 @@ $result = mysqli_stmt_get_result($stmt);
 <h1>Aktivitäten</h1>
 <p>
     <a href="dashboard.php">← Dashboard</a> |
+    <a href="calendar.php">Kalender</a> |
     <a href="create.php">+ Neue Aktivität</a> |
     <a href="logout.php">Logout</a>
 </p>
