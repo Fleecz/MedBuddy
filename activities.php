@@ -1,12 +1,10 @@
 <?php
 session_start();
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
-    header("Location: login.php");
-    exit;
-}
-require_once "config.php";
-$benutzer_id = (int)($_SESSION["benutzer_id"] ?? 0);
-if ($benutzer_id <= 0) {
+require_once __DIR__ . '/lib/helpers.php';
+require_once __DIR__ . '/lib/config.php';
+require_login();
+$userId = (int)($_SESSION["benutzer_id"] ?? 0);
+if ($userId <= 0) {
     die("benutzer_id fehlt in der Session.");
 }
 function column_exists(mysqli $link, string $table, string $column): bool {
@@ -19,33 +17,41 @@ function column_exists(mysqli $link, string $table, string $column): bool {
     mysqli_free_result($res);
     return $ok;
 }
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["delete_id"]) && ctype_digit($_POST["delete_id"])) {
-    $delId = (int)$_POST["delete_id"];
-    $sqlDel = "DELETE FROM `aktivität` WHERE `aktivität_id` = ? AND `benutzer_id` = ?";
-    if ($stmtDel = mysqli_prepare($link, $sqlDel)) {
-        mysqli_stmt_bind_param($stmtDel, "ii", $delId, $benutzer_id);
-        mysqli_stmt_execute($stmtDel);
-        mysqli_stmt_close($stmtDel);
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $deleteIdRaw = post_str("delete_id");
+    if ($deleteIdRaw !== "" && ctype_digit($deleteIdRaw)) {
+        $activityId = (int)$deleteIdRaw;
+        $sqlDel = "DELETE FROM `aktivität` WHERE `aktivität_id` = ? AND `benutzer_id` = ?";
+        if ($stmtDel = mysqli_prepare($link, $sqlDel)) {
+            mysqli_stmt_bind_param($stmtDel, "ii", $activityId, $userId);
+            mysqli_stmt_execute($stmtDel);
+            mysqli_stmt_close($stmtDel);
+        }
+        $qs = [];
+        if (isset($_GET["status"])) $qs["status"] = get_str("status");
+        if (isset($_GET["sort"]))   $qs["sort"]   = get_str("sort");
+        redirect_to("index.php", $qs);
     }
-    $qs = [];
-    if (isset($_GET["status"])) $qs["status"] = $_GET["status"];
-    if (isset($_GET["sort"]))   $qs["sort"]   = $_GET["sort"];
-    $target = "activities.php" . (count($qs) ? ("?" . http_build_query($qs)) : "");
-    header("Location: $target");
-    exit;
 }
+$status = get_str("status", "active");
+$mapStatus = [
+  "active"   => "active",
+  "aktiv"    => "active",
+  "archiv"   => "archiv",
+  "archive"  => "archiv",
+  "archived" => "archiv",
+];
 $status = $mapStatus[strtolower((string)$status)] ?? "active";
-$sort = $_GET["sort"] ?? "date_desc";
+$sort = get_str("sort", "date_desc");
 if (!in_array($sort, ["date_desc", "date_asc"], true)) $sort = "date_desc";
-$dateExpr = "STR_TO_DATE(a.datum, '%Y-%m-%d')";
+$activityDate = "STR_TO_DATE(a.datum, '%Y-%m-%d')";
 $orderBy = ($sort === "date_asc")
-    ? "$dateExpr ASC, a.aktivität_id ASC"
-    : "$dateExpr DESC, a.aktivität_id DESC";
-$whereStatus = ($status === "archiv") ? "$dateExpr < CURDATE()" : "$dateExpr >= CURDATE()";
+    ? "$activityDate ASC, a.aktivität_id ASC"
+    : "$activityDate DESC, a.aktivität_id DESC";
+$whereStatus = ($status === "archiv") ? "$activityDate < CURDATE()" : "$activityDate >= CURDATE()";
 $has_time_col = column_exists($link, "aktivität", "uhrzeit");
 $timeSelect = $has_time_col ? ", a.uhrzeit" : "";
 $timeHeader = $has_time_col ? "<th>Uhrzeit</th>" : "";
-$userCol = column_exists($link, "benutzer", "username") ? "username" : "name";
 $sql = "
 SELECT
     a.aktivität_id,
@@ -63,13 +69,13 @@ WHERE a.benutzer_id = ?
   AND $whereStatus
 ORDER BY $orderBy
 ";
-$stmt = mysqli_prepare($link, $sql);
-if (!$stmt) {
-    die("SQL-Fehler: " . htmlspecialchars(mysqli_error($link)));
+$activityStmt = mysqli_prepare($link, $sql);
+if (!$activityStmt) {
+    die("SQL-Fehler: " . e(mysqli_error($link)));
 }
-mysqli_stmt_bind_param($stmt, "i", $benutzer_id);
-mysqli_stmt_execute($stmt);
-$result = mysqli_stmt_get_result($stmt);
+mysqli_stmt_bind_param($activityStmt, "i", $userId);
+mysqli_stmt_execute($activityStmt);
+$activityResult = mysqli_stmt_get_result($activityStmt);
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -78,67 +84,62 @@ $result = mysqli_stmt_get_result($stmt);
     <title>Aktivitäten</title>
 </head>
 <body>
-<h1>Aktivitäten</h1>
-    <a href="dashboard.php">← Dashboard</a> |
+<h1>Aktivitätseinträge</h1>
+    <a href="index.php">Dashboard</a> |
+    <a href="create.php">Neuen Eintrag erstellen</a> |
     <a href="calendar.php">Kalender</a> |
-    <a href="create.php">+ Neue Aktivität</a> |
     <a href="logout.php">Logout</a>
-<hr>
-
-<form method="get" action="activities.php">
-    <label>Status:</label>
-    <select name="status">
-        <option value="active" <?php echo ($status === "active") ? "selected" : ""; ?>>Aktiv</option>
-        <option value="archiv" <?php echo ($status === "archiv") ? "selected" : ""; ?>>Archiv</option>
-    </select>
-
-    <label>Sortierung:</label>
-    <select name="sort">
-        <option value="date_desc" <?php echo ($sort === "date_desc") ? "selected" : ""; ?>>Datum ↓</option>
-        <option value="date_asc"  <?php echo ($sort === "date_asc") ? "selected" : ""; ?>>Datum ↑</option>
-    </select>
-    <button type="submit">Anwenden</button>
+<form method="get" style="margin: 0 0 20px 0;">
+    <label>Status:
+        <select name="status">
+            <option value="active" <?php echo ($status === "active") ? "selected" : ""; ?>>Aktiv</option>
+            <option value="archiv" <?php echo ($status === "archiv") ? "selected" : ""; ?>>Archiv</option>
+        </select>
+    </label>
+    <label style="margin-left: 10px;">Sortierung:
+        <select name="sort">
+            <option value="date_desc" <?php echo ($sort === "date_desc") ? "selected" : ""; ?>>Datum (neu → alt)</option>
+            <option value="date_asc" <?php echo ($sort === "date_asc") ? "selected" : ""; ?>>Datum (alt → neu)</option>
+        </select>
+    </label>
+    <button type="submit" style="margin-left: 10px;">Anwenden</button>
 </form>
-<hr>
-<?php if ($result && mysqli_num_rows($result) > 0): ?>
-    <table border="1" cellpadding="6" cellspacing="0">
-        <thead>
-        <tr>
-            <th>#</th>
-            <th>Titel</th>
-            <th>Beschreibung</th>
-            <th>Kategorie</th>
-            <th>Datum</th>
-            <?php echo $timeHeader; ?>
-            <th>Stimmung</th>
-            <th>Aktionen</th>
-        </tr>
-        </thead>
-        <tbody>
-        <?php while ($row = mysqli_fetch_assoc($result)): ?>
+<table border="1" cellpadding="8" cellspacing="0">
+    <thead>
+    <tr>
+        <th>Titel</th>
+        <th>Beschreibung</th>
+        <th>Kategorie</th>
+        <th>Datum</th>
+        <?php echo $timeHeader; ?>
+        <th>Stimmung</th>
+        <th>Aktionen</th>
+    </tr>
+    </thead>
+    <tbody>
+    <?php if ($activityResult && mysqli_num_rows($activityResult) > 0): ?>
+        <?php while ($row = mysqli_fetch_assoc($activityResult)): ?>
             <?php
             $id = (int)$row["aktivität_id"];
-            $titel = htmlspecialchars($row["titel"] ?? "", ENT_QUOTES, "UTF-8");
-            $beschreibung = htmlspecialchars($row["beschreibung"] ?? "", ENT_QUOTES, "UTF-8");
-            $category = htmlspecialchars($row["category"] ?? "", ENT_QUOTES, "UTF-8");
-            $datum = htmlspecialchars($row["datum"] ?? "", ENT_QUOTES, "UTF-8");
+            $titel = e($row["titel"] ?? "");
+            $beschreibung = e($row["beschreibung"] ?? "");
+            $category = e($row["category"] ?? "");
+            $datum = e($row["datum"] ?? "");
             $uhrzeitCell = "";
             if ($has_time_col) {
-                $uhrzeitCell = "<td>" . htmlspecialchars($row["uhrzeit"] ?? "", ENT_QUOTES, "UTF-8") . "</td>";
+                $uhrzeitCell = "<td>" . e($row["uhrzeit"] ?? "") . "</td>";
             }
-            $stimmungHtml = "—";
-            if (!empty($row["stimmungseintrag_id"])) {
-                $sw = $row["stimmungswert"];
+            $stimmungHtml = "-";
+            $sw = $row["stimmungswert"];
+            if ($sw !== null && (string)$sw !== "") {
                 $sn = $row["stimmung_notiz"];
-                $stimmungHtml = "Wert: " . htmlspecialchars((string)$sw, ENT_QUOTES, "UTF-8");
+                $stimmungHtml = "Wert: " . e((string)$sw);
                 if ($sn !== null && trim((string)$sn) !== "") {
-                    $stimmungHtml .= "<br><small>Notiz: " . htmlspecialchars((string)$sn, ENT_QUOTES, "UTF-8") . "</small>";
+                    $stimmungHtml .= "<br><small>Notiz: " . e((string)$sn) . "</small>";
                 }
             }
-            $qs = http_build_query(["status" => $status, "sort" => $sort]);
             ?>
             <tr>
-                <td><?php echo $id; ?></td>
                 <td><?php echo $titel; ?></td>
                 <td><?php echo $beschreibung; ?></td>
                 <td><?php echo $category; ?></td>
@@ -146,22 +147,24 @@ $result = mysqli_stmt_get_result($stmt);
                 <?php echo $uhrzeitCell; ?>
                 <td><?php echo $stimmungHtml; ?></td>
                 <td>
-                    <a href="update.php?id=<?php echo $id; ?>&<?php echo $qs; ?>">[Bearbeiten]</a>
-                    <form method="post" action="activities.php?<?php echo $qs; ?>" style="display:inline;">
+                    <a href="update.php?id=<?php echo $id; ?>">Bearbeiten</a>
+                    <form method="post" style="display:inline;" onsubmit="return confirm('Wirklich löschen?');">
                         <input type="hidden" name="delete_id" value="<?php echo $id; ?>">
-                        <button type="submit" onclick="return confirm('Wirklich löschen?');">[Löschen]</button>
+                        <button type="submit">Löschen</button>
                     </form>
                 </td>
             </tr>
         <?php endwhile; ?>
-        </tbody>
-    </table>
-<?php else: ?>
-    <p><em>Keine Aktivitäten gefunden.</em></p>
-<?php endif; ?>
+    <?php else: ?>
+        <tr>
+            <td colspan="<?php echo $has_time_col ? "7" : "6"; ?>">Keine Aktivitäten gefunden.</td>
+        </tr>
+    <?php endif; ?>
+    </tbody>
+</table>
+</body>
 <?php
-mysqli_stmt_close($stmt);
+mysqli_stmt_close($activityStmt);
 mysqli_close($link);
 ?>
-</body>
 </html>

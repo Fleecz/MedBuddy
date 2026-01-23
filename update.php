@@ -1,31 +1,21 @@
 <?php
 session_start();
-
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
-    header("Location: login.php");
-    exit;
-}
-
-require_once "config.php";
-
+require_once __DIR__ . '/lib/helpers.php';
+require_once __DIR__ . '/lib/config.php';
+require_login();
 $benutzer_id = (int)($_SESSION["benutzer_id"] ?? 0);
 if ($benutzer_id <= 0) {
-    die("Fehler: benutzer_id fehlt in der Session.");
+    die("benutzer_id fehlt in der Session.");
 }
-
-// Filter-/Sort-Querystring beibehalten (für "Zurück" / Redirect nach dem Speichern)
 $return_qs = [];
-if (isset($_GET["status"])) $return_qs["status"] = (string)$_GET["status"];
-if (isset($_GET["sort"]))   $return_qs["sort"]   = (string)$_GET["sort"];
+if (isset($_GET["status"])) $return_qs["status"] = (string)get_str("status");
+if (isset($_GET["sort"]))   $return_qs["sort"]   = (string)get_str("sort");
 $return_url = "activities.php" . (count($return_qs) ? ("?" . http_build_query($return_qs)) : "");
-
-// ---- ID prüfen ----
-if (!isset($_GET["id"]) || !ctype_digit($_GET["id"])) {
+$idRaw = get_str("id", "");
+if ($idRaw === "" || !ctype_digit($idRaw)) {
     die("Ungültige Aktivität.");
 }
-$aktivitaet_id = (int)$_GET["id"];
-
-// ---- Aktivität (inkl. Stimmung) laden ----
+$aktivitaet_id = (int)$idRaw;
 $sqlLoad = "
 SELECT
   a.aktivität_id,
@@ -41,69 +31,55 @@ LEFT JOIN `stimmungseintrag` s ON s.stimmungseintrag_id = a.stimmungseintrag_id
 WHERE a.aktivität_id = ? AND a.benutzer_id = ?
 LIMIT 1
 ";
-
 $stmtLoad = mysqli_prepare($link, $sqlLoad);
 if (!$stmtLoad) {
-    die("SQL-Fehler: " . htmlspecialchars(mysqli_error($link)));
+    die("SQL-Fehler: " . e(mysqli_error($link)));
 }
 mysqli_stmt_bind_param($stmtLoad, "ii", $aktivitaet_id, $benutzer_id);
 mysqli_stmt_execute($stmtLoad);
 $resLoad = mysqli_stmt_get_result($stmtLoad);
 $aktivitaet = $resLoad ? mysqli_fetch_assoc($resLoad) : null;
 mysqli_stmt_close($stmtLoad);
-
 if (!$aktivitaet) {
     mysqli_close($link);
     die("Aktivität nicht gefunden.");
 }
-
-// ---- Form state ----
 $allowed_categories = ["Bewegung", "Entspannung", "Soziales", "Selbstfürsorge"];
-
 $title = (string)($aktivitaet["titel"] ?? "");
 $desc  = (string)($aktivitaet["beschreibung"] ?? "");
 $category = (string)($aktivitaet["category"] ?? "");
 $date  = (string)($aktivitaet["datum"] ?? "");
-
 $mood_value = ($aktivitaet["stimmungswert"] === null) ? "" : (string)$aktivitaet["stimmungswert"];
 $mood_note  = (string)($aktivitaet["stimmung_notiz"] ?? "");
-
 $t_err = $desc_err = $category_err = $date_err = $mood_err = "";
 $db_err = "";
-
-// ---- Update verarbeiten ----
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $input_title = trim($_POST["title"] ?? "");
+    $input_title = post_str("title");
     if ($input_title === "") {
         $t_err = "Bitte gib einen Aktivitätstitel ein.";
     } else {
         $title = $input_title;
     }
-
-    $input_desc = trim($_POST["desc"] ?? "");
+    $input_desc = post_str("desc");
     if ($input_desc === "") {
         $desc_err = "Bitte gib eine Beschreibung ein.";
     } else {
         $desc = $input_desc;
     }
-
-    $input_date = trim($_POST["date"] ?? "");
+    $input_date = post_str("date");
     if ($input_date === "") {
         $date_err = "Bitte gib ein Datum ein.";
     } else {
         $date = $input_date;
     }
-
-    $input_category = trim($_POST["category"] ?? "");
+    $input_category = post_str("category");
     if ($input_category === "" || !in_array($input_category, $allowed_categories, true)) {
-        $category_err = ( "Bitte wähle eine gültige Kategorie." );
+        $category_err = ("Bitte wähle eine gültige Kategorie.");
     } else {
         $category = $input_category;
     }
-
-    $mood_value = trim($_POST["mood_value"] ?? "");
-    $mood_note  = trim($_POST["mood_note"] ?? "");
-
+    $mood_value = post_str("mood_value");
+    $mood_note  = post_str("mood_note");
     if ($mood_value !== "") {
         if (!ctype_digit($mood_value)) {
             $mood_err = "Stimmungswert muss eine Zahl (1–10) sein.";
@@ -114,19 +90,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             }
         }
     }
-
     if ($t_err === "" && $desc_err === "" && $date_err === "" && $category_err === "" && $mood_err === "") {
         mysqli_begin_transaction($link);
-
         try {
             $existing_mood_id = (int)($aktivitaet["stimmungseintrag_id"] ?? 0);
             $new_mood_id = ($existing_mood_id > 0) ? $existing_mood_id : null;
-
-            // (A) Stimmung anpassen
             if ($mood_value !== "") {
                 $mv = (int)$mood_value;
                 $note = ($mood_note === "") ? null : $mood_note;
-
                 if ($existing_mood_id > 0) {
                     $sqlMoodUpd = "UPDATE `stimmungseintrag` SET `datum` = ?, `stimmungswert` = ?, `notiz` = ? WHERE `stimmungseintrag_id` = ? AND `benutzer_id` = ?";
                     $stmtMoodUpd = mysqli_prepare($link, $sqlMoodUpd);
@@ -148,7 +119,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     mysqli_stmt_close($stmtMoodIns);
                 }
             } else {
-                // Stimmung entfernt -> FK in Aktivität auf NULL setzen + Stimmungseintrag löschen
                 if ($existing_mood_id > 0) {
                     $new_mood_id = null;
                     $sqlMoodDel = "DELETE FROM `stimmungseintrag` WHERE `stimmungseintrag_id` = ? AND `benutzer_id` = ?";
@@ -161,8 +131,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     mysqli_stmt_close($stmtMoodDel);
                 }
             }
-
-            // (B) Aktivität updaten
             if ($new_mood_id === null) {
                 $sqlUpd = "UPDATE `aktivität` SET `titel` = ?, `beschreibung` = ?, `datum` = ?, `category` = ?, `stimmungseintrag_id` = NULL WHERE `aktivität_id` = ? AND `benutzer_id` = ?";
                 $stmtUpd = mysqli_prepare($link, $sqlUpd);
@@ -174,23 +142,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 if (!$stmtUpd) throw new Exception("Fehler beim Vorbereiten (Aktivität-Update): " . mysqli_error($link));
                 mysqli_stmt_bind_param($stmtUpd, "ssssiii", $title, $desc, $date, $category, $new_mood_id, $aktivitaet_id, $benutzer_id);
             }
-
             if (!mysqli_stmt_execute($stmtUpd)) {
                 throw new Exception("DB-Fehler beim Aktualisieren der Aktivität: " . mysqli_stmt_error($stmtUpd));
             }
             mysqli_stmt_close($stmtUpd);
-
             mysqli_commit($link);
             mysqli_close($link);
-            header("Location: $return_url");
-            exit;
+            redirect_to("activities.php", $return_qs);
         } catch (Throwable $e) {
             mysqli_rollback($link);
             $db_err = $e->getMessage();
         }
     }
 }
-
 mysqli_close($link);
 ?>
 <!DOCTYPE html>
@@ -200,60 +164,48 @@ mysqli_close($link);
     <title>Aktivität bearbeiten</title>
 </head>
 <body>
-
 <h1>Aktivität bearbeiten</h1>
-
 <p>
-    <a href="<?php echo htmlspecialchars($return_url, ENT_QUOTES, "UTF-8"); ?>">← Zurück</a> |
-    <a href="logout.php">Logout</a>
+    <a href="<?php echo e($return_url); ?>">← Zurück</a>
 </p>
-
 <?php if ($db_err !== ""): ?>
-    <p style="color:red;"><strong><?php echo htmlspecialchars($db_err, ENT_QUOTES, "UTF-8"); ?></strong></p>
+    <p style="color:red;"><strong><?php echo e($db_err); ?></strong></p>
 <?php endif; ?>
-
-<form method="post" action="<?php echo htmlspecialchars($_SERVER["REQUEST_URI"], ENT_QUOTES, "UTF-8"); ?>">
-
+<form method="post" action="<?php echo e($_SERVER["REQUEST_URI"]); ?>">
     <label>Aktivitätenname</label><br>
-    <input type="text" name="title" value="<?php echo htmlspecialchars($title, ENT_QUOTES, "UTF-8"); ?>">
-    <br><span style="color:red;"><?php echo htmlspecialchars($t_err, ENT_QUOTES, "UTF-8"); ?></span>
-
+    <input type="text" name="title" value="<?php echo e($title); ?>">
+    <br><span style="color:red;"><?php echo e($t_err); ?></span>
     <br><br>
-
     <label>Beschreibung</label><br>
-    <input type="text" name="desc" value="<?php echo htmlspecialchars($desc, ENT_QUOTES, "UTF-8"); ?>">
-    <br><span style="color:red;"><?php echo htmlspecialchars($desc_err, ENT_QUOTES, "UTF-8"); ?></span>
-
+    <input type="text" name="desc" value="<?php echo e($desc); ?>">
+    <br><span style="color:red;"><?php echo e($desc_err); ?></span>
     <br><br>
-
     <label>Datum</label><br>
-    <input type="date" name="date" value="<?php echo htmlspecialchars($date, ENT_QUOTES, "UTF-8"); ?>">
-    <br><span style="color:red;"><?php echo htmlspecialchars($date_err, ENT_QUOTES, "UTF-8"); ?></span>
-
+    <input type="date" name="date" value="<?php echo e($date); ?>">
+    <br><span style="color:red;"><?php echo e($date_err); ?></span>
     <br><br>
-
     <label>Kategorie</label><br>
     <select name="category">
         <option value="">bitte wählen</option>
         <?php foreach ($allowed_categories as $c): ?>
-            <option value="<?php echo htmlspecialchars($c, ENT_QUOTES, "UTF-8"); ?>" <?php echo ($category === $c) ? "selected" : ""; ?>>
-                <?php echo htmlspecialchars($c, ENT_QUOTES, "UTF-8"); ?>
+            <option value="<?php echo e($c); ?>" <?php echo ($category === $c) ? "selected" : ""; ?>>
+                <?php echo e($c); ?>
             </option>
         <?php endforeach; ?>
     </select>
-    <br><span style="color:red;"><?php echo htmlspecialchars($category_err, ENT_QUOTES, "UTF-8"); ?></span>
+    <br><span style="color:red;"><?php echo e($category_err); ?></span>
     <br><br>
     <hr>
     <h3>Optional: Stimmung</h3>
     <label>Stimmungswert (1–10)</label><br>
-    <input type="number" name="mood_value" min="1" max="10" value="<?php echo htmlspecialchars($mood_value, ENT_QUOTES, "UTF-8"); ?>">
-    <br><span style="color:red;"><?php echo htmlspecialchars($mood_err, ENT_QUOTES, "UTF-8"); ?></span>
+    <input type="number" name="mood_value" min="1" max="10" value="<?php echo e($mood_value); ?>">
+    <br><span style="color:red;"><?php echo e($mood_err); ?></span>
     <br><br>
     <label>Notiz (optional)</label><br>
-    <input type="text" name="mood_note" value="<?php echo htmlspecialchars($mood_note, ENT_QUOTES, "UTF-8"); ?>">
+    <input type="text" name="mood_note" value="<?php echo e($mood_note); ?>">
     <br><br>
     <input type="submit" value="Speichern">
-    <a href="<?php echo htmlspecialchars($return_url, ENT_QUOTES, "UTF-8"); ?>">Abbrechen</a>
+    <a href="<?php echo e($return_url); ?>">Abbrechen</a>
 </form>
 </body>
 </html>

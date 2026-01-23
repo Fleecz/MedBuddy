@@ -1,16 +1,14 @@
 <?php
 session_start();
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
-    header("Location: login.php");
-    exit;
-}
-require_once "config.php";
+require_once __DIR__ . '/lib/helpers.php';
+require_once __DIR__ . '/lib/config.php';
+require_login();
 $benutzer_id = (int)($_SESSION["benutzer_id"] ?? 0);
 if ($benutzer_id <= 0) {
-    die("Fehler: benutzer_id fehlt in der Session.");
+    die("benutzer_id fehlt in der Session.");
 }
-function h(string $s): string { return htmlspecialchars($s, ENT_QUOTES, "UTF-8"); }
-$ym = $_GET["ym"] ?? date("Y-m");
+function h(string $s): string { return e($s); }
+$ym = get_str("ym", date("Y-m"));
 if (!preg_match('/^\d{4}-\d{2}$/', $ym)) $ym = date("Y-m");
 $year  = (int)substr($ym, 0, 4);
 $month = (int)substr($ym, 5, 2);
@@ -18,7 +16,8 @@ $firstOfMonth = DateTime::createFromFormat("Y-m-d", sprintf("%04d-%02d-01", $yea
 if (!$firstOfMonth) $firstOfMonth = new DateTime("first day of this month");
 $daysInMonth = (int)$firstOfMonth->format("t");
 $startWeekday = (int)$firstOfMonth->format("N");
-$selected = $_GET["day"] ?? null;
+$selected = get_str("day", "");
+$selected = ($selected === "") ? null : $selected;
 if ($selected !== null && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $selected)) $selected = null;
 $monthStart = $firstOfMonth->format("Y-m-01");
 $monthEndDt = clone $firstOfMonth;
@@ -119,7 +118,7 @@ $next = (clone $firstOfMonth)->modify("+1 month")->format("Y-m");
 </head>
 <body>
 <nav>
-    <a href="dashboard.php">Dashboard</a>
+    <a href="index.php">Dashboard</a>
     <a href="activities.php">Aktivitäten</a>
     <a href="calendar.php">Kalender</a>
     <a href="logout.php">Logout</a>
@@ -186,7 +185,7 @@ $next = (clone $firstOfMonth)->modify("+1 month")->format("Y-m");
     <aside class="side">
         <?php if ($selected === null): ?>
             <h2>Tag auswählen</h2>
-            <p class="empty">Klicke im Kalender auf einen Tag, um die Einträge zu sehen.</p>
+            <p class="empty">Klicke auf einen Tag, um konkrete Einträge zu sehen.</p>
         <?php else: ?>
             <h2><?php echo h($selected); ?></h2>
             <?php
@@ -211,7 +210,6 @@ $next = (clone $firstOfMonth)->modify("+1 month")->format("Y-m");
                         <li><?php echo h($line); ?></li>
                     <?php endforeach; ?>
                 </ul>
-                <p class="small">Quelle: Join aus <code>einnahmeplan</code>, <code>medikament</code>, <code>einnahmeform</code>.</p>
             <?php endif; ?>
             <h3 style="margin:14px 0 6px;">Aktivitäten</h3>
             <?php if (count($selActs) === 0): ?>

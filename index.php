@@ -1,9 +1,7 @@
 <?php
 session_start();
-if (!isset($_SESSION["loggedin"])) {
-    header("Location: login.php");
-    exit;
-}
+require_once __DIR__ . '/lib/helpers.php';
+require_login();
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -13,9 +11,9 @@ if (!isset($_SESSION["loggedin"])) {
 </head>
 <body>
 <nav>
-    <a href="./activities.php">Aktivitäten</a>
-    <a href="./calendar.php">Kalender</a>
-    <a href="./logout.php">Logout</a>
+    <a href="activities.php">Aktivitäten</a>
+    <a href="calendar.php">Kalender</a>
+    <a href="logout.php">Logout</a>
 </nav>
 <h1>Dashboard</h1>
 <p>Willkommen bei MedBuddy.</p>
