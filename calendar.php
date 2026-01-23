@@ -227,7 +227,6 @@ $next = (clone $firstOfMonth)->modify("+1 month")->format("Y-m");
                         <li><?php echo h($line); ?></li>
                     <?php endforeach; ?>
                 </ul>
-                <p class="small">Hinweis: Details bleiben im Aktivitäten-Tab ausführlicher (hier bewusst kompakt).</p>
             <?php endif; ?>
         <?php endif; ?>
     </aside>

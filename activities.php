@@ -7,7 +7,7 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
 require_once "config.php";
 $benutzer_id = (int)($_SESSION["benutzer_id"] ?? 0);
 if ($benutzer_id <= 0) {
-    die("Fehler: benutzer_id fehlt in der Session.");
+    die("benutzer_id fehlt in der Session.");
 }
 function column_exists(mysqli $link, string $table, string $column): bool {
     $table_esc = mysqli_real_escape_string($link, $table);
@@ -21,7 +21,6 @@ function column_exists(mysqli $link, string $table, string $column): bool {
 }
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["delete_id"]) && ctype_digit($_POST["delete_id"])) {
     $delId = (int)$_POST["delete_id"];
-
     $sqlDel = "DELETE FROM `aktivität` WHERE `aktivität_id` = ? AND `benutzer_id` = ?";
     if ($stmtDel = mysqli_prepare($link, $sqlDel)) {
         mysqli_stmt_bind_param($stmtDel, "ii", $delId, $benutzer_id);
@@ -35,14 +34,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["delete_id"]) && ctype
     header("Location: $target");
     exit;
 }
-$status = $_GET["status"] ?? "active";
-$mapStatus = [
-    "active"  => "active",
-    "aktiv"   => "active",
-    "archiv"  => "archiv",
-    "archive" => "archiv",
-    "archived"=> "archiv",
-];
 $status = $mapStatus[strtolower((string)$status)] ?? "active";
 $sort = $_GET["sort"] ?? "date_desc";
 if (!in_array($sort, ["date_desc", "date_asc"], true)) $sort = "date_desc";
@@ -88,13 +79,10 @@ $result = mysqli_stmt_get_result($stmt);
 </head>
 <body>
 <h1>Aktivitäten</h1>
-<p>
     <a href="dashboard.php">← Dashboard</a> |
     <a href="calendar.php">Kalender</a> |
     <a href="create.php">+ Neue Aktivität</a> |
     <a href="logout.php">Logout</a>
-</p>
-
 <hr>
 
 <form method="get" action="activities.php">
