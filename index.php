@@ -13,6 +13,7 @@ require_login();
 <nav>
     <a href="activities.php">Aktivitäten</a>
     <a href="calendar.php">Kalender</a>
+    <a href="vertrauenspersonen.php">Vertrauenspersonen</a>
     <a href="logout.php">Logout</a>
 </nav>
 <h1>Dashboard</h1>
