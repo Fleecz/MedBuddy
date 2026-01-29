@@ -8,7 +8,7 @@
   konto_aktiv BOOLEAN NOT NULL DEFAULT TRUE,
   letzte_aktualisierung TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     ON UPDATE CURRENT_TIMESTAMP
-) 
+);
 CREATE TABLE vertrauensperson (
     vertrauensperson_id INT AUTO_INCREMENT PRIMARY KEY,
     benutzer_id INT NOT NULL,
