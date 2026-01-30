@@ -3,7 +3,7 @@ session_start();
 require_once __DIR__ . '/lib/helpers.php';
 require_once __DIR__ . '/lib/config.php';
 require_login();
-$currentUserId = (int)($_SESSION["benutzer_id"] ?? 0);
+$currentUserId = ($_SESSION["benutzer_id"] ?? 0);
 if ($currentUserId <= 0) {
     die("benutzer_id fehlt in der Session.");
     }
@@ -11,16 +11,17 @@ if ($currentUserId <= 0) {
 
 // Entfernen
 if (isset($_POST['delete_id'])) {
-    $id = (int)$_POST['delete_id'];
+    $id = $_POST['delete_id'];
 
-    $stmt = $pdo->prepare("
+    $stmt = mysqli_prepare($link, "
         DELETE FROM vertrauensperson
         WHERE vertrauensperson_id = ? AND benutzer_id = ?
     ");
-    $stmt->execute([$id, $currentUserId]);
-
+    mysqli_stmt_bind_param($stmt,"ii",$id, $currentUserId);
+    mysqli_stmt_execute($stmt);
     echo "<p>Vertrauensperson gelöscht</p>";
     }
+
 // Hinzufügen
 if(isset($_POST["Hinzufügen"])){
     $name = trim($_POST["username"]);
@@ -28,51 +29,63 @@ if(isset($_POST["Hinzufügen"])){
     $beziehung = $_POST["benutzer_beziehung"];
 
     if ($name && $email) {
-        $stmt = $pdo->prepare("
-        INSERT INTO vertrauensperson
-        (benutzer_id, username, email, benutzer_beziehung)
-        VALUES (:uid, :username, :email, :benutzer_beziehung)");
-        $stmt->execute([
-            ':uid' => $currentUserId,
-            ':username' => $name,
-            ':email' => $email,
-            ':benutzer_beziehung' => $beziehung]);
+        $stmt = mysqli_prepare($link, "
+            INSERT INTO vertrauensperson
+            (benutzer_id, username, email, benutzer_beziehung)
+            VALUES (?, ?, ?, ?)");
+        mysqli_stmt_bind_param($stmt, "isss", 
+            $currentUserId,
+            $name,
+            $email,
+            $beziehung);
+        mysqli_stmt_execute($stmt);
         }
+        header("Location: vertrauenspersonen.php");
+        exit;   
     }
 // Ändern
 if (isset($_POST['update_id'])) {
-    $stmt = $pdo->prepare("
+    $stmt = mysqli_prepare($link, "
         UPDATE vertrauensperson
         SET username = ?, email = ?, benutzer_beziehung = ?
         WHERE vertrauensperson_id = ? AND benutzer_id = ?
     ");
-    $stmt->execute([
-        $_POST['username'],
-        $_POST['email'],
-        $_POST['benutzer_beziehung'],
-        (int)$_POST['update_id'],
+    mysqli_stmt_bind_param($stmt, "sssii", 
+        $_POST["username"] ??'',
+        $_POST["email"] ??'',
+        $_POST["benutzer_beziehung"] ??'',
+        (int)$_POST['update_id'] ??'',
         $currentUserId
-    ]);
+    );
+    mysqli_stmt_execute($stmt);
+    header("Location: vertrauenspersonen.php");
+    exit;
 }
 
 // Liste
-$stmt = $pdo->prepare("
+$stmt = mysqli_prepare($link, "
     SELECT vertrauensperson_id, username, email, benutzer_beziehung
     FROM vertrauensperson
     WHERE benutzer_id = ?
 ");
-$stmt->execute([$currentUserId]);
-$personen = $stmt->fetchAll(PDO::FETCH_ASSOC);
+mysqli_stmt_bind_param($stmt, "i", $currentUserId);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
+$personen = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 //Bearbeiten
 $editPerson = null;
 if (isset($_GET['edit_id'])) {
-    $stmt = $pdo->prepare("
+    $editId = $_GET["edit_id"];
+
+    $stmt = mysqli_prepare($link, "
         SELECT * FROM vertrauensperson
         WHERE vertrauensperson_id = ? AND benutzer_id = ?
     ");
-    $stmt->execute([$_GET['edit_id'], $currentUserId]);
-    $editPerson = $stmt->fetch(PDO::FETCH_ASSOC);
+    mysqli_stmt_bind_param($stmt, "ii", $editId, $currentUserId);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $editPerson = mysqli_fetch_assoc($result);
 }
 ?>
 <html>
@@ -126,25 +139,25 @@ if (isset($_GET['edit_id'])) {
         </form>
         <br>
         <br>
-         <?php if ($editPerson): ?>
+         <?php if ($editPerson !== null): ?>
         <h3>Vertrauensperson bearbeiten</h3>
 
         <form method="post">
-            <input type="hidden" name="update_id" value="<?= $editPerson['vertrauensperson_id'] ?>">
+            <input type="hidden" name="update_id" value="<?= ($editPerson['vertrauensperson_id'] ?? '') ?>">
 
             <label>Nachname, Vorname:</label><br>
             <input type="text" name="username"
-                value="<?= htmlspecialchars($editPerson['username']) ?>"><br>
+                value="<?= htmlspecialchars($editPerson['username'] ?? '') ?>"><br>
 
             <label>E-Mail:</label><br>
             <input type="email" name="email"
-                value="<?= htmlspecialchars($editPerson['email']) ?>"><br>
+                value="<?= htmlspecialchars($editPerson['email'] ?? '') ?>"><br>
 
             <label>Beziehung:</label><br>
             <select name="benutzer_beziehung">
-                <option value="Freund" <?= $editPerson['benutzer_beziehung']=='Freund'?'selected':'' ?>>Freund</option>
-                <option value="Familie" <?= $editPerson['benutzer_beziehung']=='Familie'?'selected':'' ?>>Familie</option>
-                <option value="Arzt" <?= $editPerson['benutzer_beziehung']=='Arzt'?'selected':'' ?>>Arzt</option>
+                <option value="Freund" <?= ($editPerson['benutzer_beziehung'] ?? '')=='Freund'?'selected':'' ?>>Freund</option>
+                <option value="Familie" <?= ($editPerson['benutzer_beziehung'] ?? '')=='Familie'?'selected':'' ?>>Familie</option>
+                <option value="Arzt" <?= ($editPerson['benutzer_beziehung'] ?? '')=='Arzt'?'selected':'' ?>>Arzt</option>
             </select><br><br>
 
             <button type="submit">Änderungen speichern</button>
