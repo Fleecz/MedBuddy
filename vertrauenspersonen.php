@@ -100,6 +100,8 @@ if (isset($_GET['edit_id'])) {
     <body>
         <h1>Vertrauenspersonen: Verwaltung</h1>
 
+        <a href="index.php"><button>Zurück zur Startseite</button></a>
+
         <h2>Hallo, <?php echo htmlspecialchars($_SESSION["username"] ?? "Gast"); ?></h2>
 
         <h2>In diesem Menü verwalten Sie ihre Vertrauensperonen.</h2>
