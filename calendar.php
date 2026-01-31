@@ -14,8 +14,8 @@ $year  = (int)substr($ym, 0, 4);
 $month = (int)substr($ym, 5, 2);
 $firstOfMonth = DateTime::createFromFormat("Y-m-d", sprintf("%04d-%02d-01", $year, $month));
 if (!$firstOfMonth) $firstOfMonth = new DateTime("first day of this month");
-$daysInMonth = (int)$firstOfMonth->format("t");
-$startWeekday = (int)$firstOfMonth->format("N");
+$daysInMonth   = (int)$firstOfMonth->format("t");
+$startWeekday  = (int)$firstOfMonth->format("N");
 $selected = get_str("day", "");
 $selected = ($selected === "") ? null : $selected;
 if ($selected !== null && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $selected)) $selected = null;
@@ -28,19 +28,20 @@ SELECT
     p.plan_id,
     p.startdatum,
     p.enddatum,
-    p.uhrzeit,
+    pu.uhrzeit,
     p.p_dosierung,
     p.häufigkeit,
-    m.name AS medikament_name,
-    ef.name AS einnahmeform_name
+    m.mname AS medikament_name,
+    ef.ename AS einnahmeform_name
 FROM einnahmeplan p
 JOIN medikament m ON m.medikament_id = p.medikament_id
+LEFT JOIN einnahmeplan_uhrzeit pu ON pu.plan_id = p.plan_id
 LEFT JOIN einnahmeform ef ON ef.einnahmeform_id = m.einnahmeform_id
 WHERE p.benutzer_id = ?
   AND (p.aktiv = 1 OR p.aktiv IS NULL)
   AND (p.startdatum IS NULL OR p.startdatum <= ?)
   AND (p.enddatum   IS NULL OR p.enddatum   >= ?)
-ORDER BY p.uhrzeit ASC, m.name ASC
+ORDER BY pu.uhrzeit ASC, m.mname ASC
 ";
 $stmtMed = mysqli_prepare($link, $sqlMed);
 if (!$stmtMed) die("SQL-Fehler (Med): " . h(mysqli_error($link)));
@@ -144,7 +145,7 @@ $next = (clone $firstOfMonth)->modify("+1 month")->format("Y-m");
             for ($d=1; $d<=$daysInMonth; $d++) {
                 $dayStr = sprintf("%04d-%02d-%02d", $year, $month, $d);
                 $dayPlans = plans_for_day($plans, $dayStr);
-                $dayActs = $actsByDay[$dayStr] ?? [];
+                $dayActs  = $actsByDay[$dayStr] ?? [];
                 $countMed = count($dayPlans);
                 $countAct = count($dayActs);
                 $isSelected = ($selected === $dayStr);
@@ -175,7 +176,7 @@ $next = (clone $firstOfMonth)->modify("+1 month")->format("Y-m");
                 echo '</div>';
             }
             $cells = ($startWeekday - 1) + $daysInMonth;
-            $rest = (7 - ($cells % 7)) % 7;
+            $rest  = (7 - ($cells % 7)) % 7;
             for ($i=0; $i<$rest; $i++) {
                 echo '<div class="day"><div class="muted"> </div></div>';
             }
@@ -199,12 +200,12 @@ $next = (clone $firstOfMonth)->modify("+1 month")->format("Y-m");
                 <ul class="list">
                     <?php foreach ($selPlans as $p): ?>
                         <?php
-                        $time = $p["uhrzeit"] ? substr((string)$p["uhrzeit"], 0, 5) : "";
-                        $m = trim((string)($p["medikament_name"] ?? ""));
-                        $f = trim((string)($p["einnahmeform_name"] ?? ""));
+                        $time = ($p["uhrzeit"] ?? null) ? substr((string)$p["uhrzeit"], 0, 5) : "";
+                        $m    = trim((string)($p["medikament_name"] ?? ""));
+                        $f    = trim((string)($p["einnahmeform_name"] ?? ""));
                         $dose = trim((string)($p["p_dosierung"] ?? ""));
-                        $line = ($time ? ($time . " – ") : "") . $m;
-                        if ($f !== "") $line .= " (" . $f . ")";
+                        $line = ($time ? ($time . " – ") : "") . ($m !== "" ? $m : "Medikament");
+                        if ($f !== "")   $line .= " (" . $f . ")";
                         if ($dose !== "") $line .= " – " . $dose;
                         ?>
                         <li><?php echo h($line); ?></li>
@@ -219,8 +220,8 @@ $next = (clone $firstOfMonth)->modify("+1 month")->format("Y-m");
                     <?php foreach ($selActs as $a): ?>
                         <?php
                         $title = trim((string)($a["titel"] ?? ""));
-                        $cat = trim((string)($a["category"] ?? ""));
-                        $line = $title . ($cat !== "" ? " – " . $cat : "");
+                        $cat   = trim((string)($a["category"] ?? ""));
+                        $line  = ($title !== "" ? $title : "Aktivität") . ($cat !== "" ? " – " . $cat : "");
                         ?>
                         <li><?php echo h($line); ?></li>
                     <?php endforeach; ?>
