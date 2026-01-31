@@ -69,7 +69,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <label>Passwort</label><br>
     <input type="password" name="password"><br>
     <span style="color:red;"><?php echo e($password_err); ?></span><br><br>
-    <input type="submit" value="Login">
+    <input type="submit" value="Login"><br><br>
+    Noch kein Profil? <a href="register.php">Hier registrieren</a>
 </form>
 </body>
 </html>

@@ -11,10 +11,12 @@ require_login();
 </head>
 <body>
 <nav>
-    <a href="activities.php">Aktivitäten</a>
-    <a href="calendar.php">Kalender</a>
-    <a href="vertrauenspersonen.php">Vertrauenspersonen</a>
-    <a href="logout.php">Logout</a>
+    <a href="eplan.php"><button>Medikamente</button></a>
+    <a href="activities.php"><button>Aktivitäten</button></a>
+    <a href="calendar.php"><button>Kalender</button></a>
+    <a href="vertrauenspersonen.php"><button>Vertrauenspersonen</button></a>
+    <a href="logout.php"><button>Logout</button></a>
+    
 </nav>
 <h1>Dashboard</h1>
 <p>Willkommen bei MedBuddy.</p>

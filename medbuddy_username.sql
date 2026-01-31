@@ -19,17 +19,18 @@ CREATE TABLE vertrauensperson (
 );
 CREATE TABLE einnahmeform (
     einnahmeform_id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(50)
+    ename VARCHAR(50)
 );
 CREATE TABLE wirkstoff (
     wirkstoff_id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(100),
+    wname VARCHAR(100),
     wirkstoffgruppe VARCHAR(100),
     beschreibung TEXT
 );
 CREATE TABLE medikament (
     medikament_id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(100),
+    mname VARCHAR(50) NOT NULL,
+    benutzer_id VARCHAR(100),
     atc_code VARCHAR(20),
     form VARCHAR(50),
     dosis VARCHAR(50),
@@ -77,13 +78,20 @@ CREATE TABLE einnahmeplan (
     benutzer_id INT NOT NULL,
     medikament_id INT NOT NULL,
     p_dosierung VARCHAR(50),
-    häufigkeit VARCHAR(50),
-    uhrzeit TIME,
+    häufigkeit INT,
     startdatum DATE,
     enddatum DATE,
     aktiv BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (benutzer_id) REFERENCES benutzer(benutzer_id),
     FOREIGN KEY (medikament_id) REFERENCES medikament(medikament_id)
+);
+
+CREATE TABLE einnahmeplan_uhrzeit (
+    plan_uhrzeit_id INT AUTO_INCREMENT PRIMARY KEY,
+    plan_id INT NOT NULL,
+    uhrzeit TIME NOT NULL,
+    FOREIGN KEY (plan_id) REFERENCES einnahmeplan(plan_id)
+    ON DELETE CASCADE
 );
 CREATE TABLE einnahmeereignis (
     einnahme_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -137,3 +145,85 @@ CREATE TABLE aktivität (
     REFERENCES benutzer(benutzer_id)
     ON DELETE CASCADE
 );
+
+START TRANSACTION;
+
+INSERT INTO einnahmeform (einnahmeform_id, ename) VALUES
+(1, 'Tablette'),
+(2, 'Kapsel'),
+(3, 'Saft/Sirup'),
+(4, 'Tropfen'),
+(5, 'Inhalation'),
+(6, 'Injektion');
+
+INSERT INTO wirkstoff (wirkstoff_id, wname, wirkstoffgruppe, beschreibung) VALUES
+(1,  'Paracetamol',  'Analgetikum/Antipyretikum', 'Schmerzlindernd und fiebersenkend.'),
+(2,  'Ibuprofen',    'NSAR', 'Entzündungshemmendes Schmerzmittel.'),
+(3,  'Amoxicillin',  'Antibiotikum (Penicillin)', 'Breitbandantibiotikum.'),
+(4,  'Metformin',    'Antidiabetikum', 'Verbessert Insulinempfindlichkeit.'),
+(5,  'Amlodipin',    'Calciumkanalblocker', 'Blutdrucksenkend.'),
+(6,  'Omeprazol',    'PPI', 'Senkt Magensäureproduktion.'),
+(7,  'Sertralin',    'SSRI', 'Antidepressivum.'),
+(8,  'Salbutamol',   'Beta-2-Sympathomimetikum', 'Bronchienerweiternd.'),
+(9,  'Lisinopril',   'ACE-Hemmer', 'Blutdrucksenkend.'),
+(10, 'Atorvastatin', 'Statin', 'Cholesterinsenkend.');
+
+INSERT INTO medikament (medikament_id, mname, atc_code, form, dosis, beschreibung, einnahmeform_id) VALUES
+(1,  'Paracetamol 500',  'N02BE01', 'Tablette',  '500 mg', 'Schmerz/Fieber', 1),
+(2,  'Ibuprofen 400',    'M01AE01', 'Tablette',  '400 mg', 'Schmerz/Entzündung', 1),
+(3,  'Amoxicillin 500',  'J01CA04', 'Kapsel',    '500 mg', 'Antibiotikum', 2),
+(4,  'Metformin 500',    'A10BA02', 'Tablette',  '500 mg', 'Diabetes Typ 2', 1),
+(5,  'Amlodipin 5',      'C08CA01', 'Tablette',  '5 mg',   'Bluthochdruck', 1),
+(6,  'Omeprazol 20',     'A02BC01', 'Kapsel',    '20 mg',  'Sodbrennen/Reflux', 2),
+(7,  'Sertralin 50',     'N06AB06', 'Tablette',  '50 mg',  'Depression/Angst', 1),
+(8,  'Salbutamol',       'R03AC02', 'Inhalation','100 µg', 'Asthma', 5),
+(9,  'Lisinopril 10',    'C09AA03', 'Tablette',  '10 mg',  'Bluthochdruck', 1),
+(10, 'Atorvastatin 20',  'C10AA05', 'Tablette',  '20 mg',  'Cholesterin', 1);
+
+INSERT INTO medikament_wirkstoff (medikament_id, wirkstoff_id) VALUES
+(1, 1),
+(2, 2),
+(3, 3),
+(4, 4),
+(5, 5),
+(6, 6),
+(7, 7),
+(8, 8),
+(9, 9),
+(10,10);
+
+INSERT INTO nebenwirkung (nebenwirkung_id, bezeichnung, beschreibung, häufigkeit, schweregrad) VALUES
+(1,  'Übelkeit', 'Übelkeit/Magenbeschwerden', 'gelegentlich', 'leicht'),
+(2,  'Magenschmerzen', 'Reizung der Magenschleimhaut', 'häufig', 'mittel'),
+(3,  'Durchfall', 'Gastrointestinale Beschwerden', 'gelegentlich', 'leicht'),
+(4,  'Bauchschmerzen', 'Gastrointestinale Beschwerden', 'gelegentlich', 'leicht'),
+(5,  'Knöchelödeme', 'Wassereinlagerungen', 'gelegentlich', 'mittel'),
+(6,  'Kopfschmerzen', 'Kopfschmerzen', 'gelegentlich', 'leicht'),
+(7,  'Schlafstörungen', 'Einschlaf-/Durchschlafprobleme', 'gelegentlich', 'mittel'),
+(8,  'Zittern', 'Tremor', 'gelegentlich', 'leicht'),
+(9,  'Husten', 'Trockener Reizhusten', 'gelegentlich', 'mittel'),
+(10, 'Muskelschmerzen', 'Myalgien', 'gelegentlich', 'mittel');
+
+INSERT INTO nebenwirkung_wirkstoff (wirkstoff_id, nebenwirkung_id) VALUES
+(1, 1),   -- Paracetamol -> Übelkeit
+(2, 2),   -- Ibuprofen -> Magenschmerzen
+(3, 3),   -- Amoxicillin -> Durchfall
+(4, 4),   -- Metformin -> Bauchschmerzen
+(5, 5),   -- Amlodipin -> Ödeme
+(6, 6),   -- Omeprazol -> Kopfschmerzen
+(7, 7),   -- Sertralin -> Schlafstörungen
+(8, 8),   -- Salbutamol -> Zittern
+(9, 9),   -- Lisinopril -> Husten
+(10,10);  -- Atorvastatin -> Muskelschmerzen
+
+INSERT INTO wechselwirkung (wechselwirkung_id, bezeichnung, beschreibung, empfehlung, schweregrad) VALUES
+(1, 'Ibuprofen + Lisinopril', 'NSAR können die blutdrucksenkende Wirkung abschwächen und die Nieren belasten.', 'Nur nach Rücksprache; auf Flüssigkeit/Nierenwerte achten.', 'hoch'),
+(2, 'Sertralin + Ibuprofen',  'Erhöhtes Risiko für Magen-Darm-Blutungen bei Kombination SSRI + NSAR.', 'Vorsicht; ggf. Magenschutz; Arzt/Apotheke fragen.', 'mittel');
+
+INSERT INTO wechselwirkung_wirkstoff (wechselwirkung_id, wirkstoff_id) VALUES
+(1, 2),  -- Ibuprofen
+(1, 9),  -- Lisinopril
+(2, 7),  -- Sertralin
+(2, 2);  -- Ibuprofen
+
+COMMIT;

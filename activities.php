@@ -85,10 +85,10 @@ $activityResult = mysqli_stmt_get_result($activityStmt);
 </head>
 <body>
 <h1>Aktivitätseinträge</h1>
-    <a href="index.php">Dashboard</a> |
-    <a href="create.php">Neuen Eintrag erstellen</a> |
-    <a href="calendar.php">Kalender</a> |
-    <a href="logout.php">Logout</a>
+    <a href="index.php"><button>Dashboard</button></a> |
+    <a href="create.php"><button>Neuen Eintrag erstellen</button></a> |
+    <a href="calendar.php"><button>Kalender</button></a> |
+    <a href="logout.php"><button>Logout</button></a>
 <form method="get" style="margin: 0 0 20px 0;">
     <label>Status:
         <select name="status">
