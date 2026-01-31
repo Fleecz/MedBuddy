@@ -19,7 +19,7 @@ if (isset($_POST['delete_id'])) {
     ");
     mysqli_stmt_bind_param($stmt,"ii",$id, $currentUserId);
     mysqli_stmt_execute($stmt);
-    echo "<p>Vertrauensperson gelöscht</p>";
+    echo "<p class=\"msg ok\">Vertrauensperson gelöscht</p>";
     }
 
 // Hinzufügen
@@ -94,10 +94,12 @@ if (isset($_GET['edit_id'])) {
 
         <title>Vertrauenspersonen_Verwaltung</title>
 
-        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="styles.css">
  
     </head>
     <body>
+        <div class="container">
+        <div class="card">
         <h1>Vertrauenspersonen: Verwaltung</h1>
 
         <a href="index.php"><button>Zurück zur Startseite</button></a>
@@ -165,4 +167,6 @@ if (isset($_GET['edit_id'])) {
             <button type="submit">Änderungen speichern</button>
         </form>
         <?php endif; ?>
+        </div>
+        </div>
 </body>

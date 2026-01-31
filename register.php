@@ -73,27 +73,31 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
 <head>
     <meta charset="UTF-8">
     <title>Registrierung</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h2>Registrierung</h2>
-    <p>Bitte fülle dieses Formular aus, um ein Konto zu erstellen.</p>
-    <form action="<?php echo e($_SERVER["PHP_SELF"]); ?>" method="post">
+    <div class="container">
+        <div class="card">
+            <h2>Registrierung</h2>
+            <p>Bitte fülle dieses Formular aus, um ein Konto zu erstellen.</p>
+            <form action="<?php echo e($_SERVER["PHP_SELF"]); ?>" method="post">
             <label>Name</label>
-            <input type="text" name="username" <?php echo (!empty($username_err)) ? 'is-invalid' : ''; ?>" value="<?php echo e($username); ?>">
+            <input type="text" name="username" class="<?php echo (!empty($username_err)) ? 'is-invalid' : ''; ?>" value="<?php echo e($username); ?>">
             <span><?php echo $username_err; ?></span>
             <label>Email</label>
-            <input type="email" name="email" <?php echo (!empty($email_err)) ? 'is-invalid' : ''; ?>" value="<?php echo e($email); ?>">
+            <input type="email" name="email" class="<?php echo (!empty($email_err)) ? 'is-invalid' : ''; ?>" value="<?php echo e($email); ?>">
             <span><?php echo $email_err; ?></span>
             <label>Passwort</label>
-            <input type="password" name="password" class="form-control <?php echo (!empty($password_err)) ? 'is-invalid' : ''; ?>" value="<?php echo e($password); ?>">
+            <input type="password" name="password" class="<?php echo (!empty($password_err)) ? 'is-invalid' : ''; ?>" value="<?php echo e($password); ?>">
             <span><?php echo $password_err; ?></span>
             <label>Passwort bestätigen</label>
-            <input type="password" name="confirm_password"<?php echo (!empty($confirm_password_err)) ? 'is-invalid' : ''; ?>" value="<?php echo e($confirm_password); ?>">
+            <input type="password" name="confirm_password" class="<?php echo (!empty($confirm_password_err)) ? 'is-invalid' : ''; ?>" value="<?php echo e($confirm_password); ?>">
             <span><?php echo $confirm_password_err; ?></span>
-            <input type="submit"value="Bestätigen">
-            <input type="reset"value="Zurücksetzen">
-        <p>Hast du bereits einen Account? <a href="login.php">Login hier</a>.</p>
-    </form>
-</div>
+            <input type="submit" value="Bestätigen">
+            <input type="reset" value="Zurücksetzen">
+            <p>Hast du bereits einen Account? <a href="login.php">Login hier</a>.</p>
+            </form>
+        </div>
+    </div>
 </body>
 </html>

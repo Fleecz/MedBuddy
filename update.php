@@ -162,50 +162,55 @@ mysqli_close($link);
 <head>
     <meta charset="UTF-8">
     <title>Aktivität bearbeiten</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<h1>Aktivität bearbeiten</h1>
-<p>
-    <a href="<?php echo e($return_url); ?>">← Zurück</a>
-</p>
-<?php if ($db_err !== ""): ?>
-    <p style="color:red;"><strong><?php echo e($db_err); ?></strong></p>
-<?php endif; ?>
-<form method="post" action="<?php echo e($_SERVER["REQUEST_URI"]); ?>">
-    <label>Aktivitätenname</label><br>
-    <input type="text" name="title" value="<?php echo e($title); ?>">
-    <br><span style="color:red;"><?php echo e($t_err); ?></span>
-    <br><br>
-    <label>Beschreibung</label><br>
-    <input type="text" name="desc" value="<?php echo e($desc); ?>">
-    <br><span style="color:red;"><?php echo e($desc_err); ?></span>
-    <br><br>
-    <label>Datum</label><br>
-    <input type="date" name="date" value="<?php echo e($date); ?>">
-    <br><span style="color:red;"><?php echo e($date_err); ?></span>
-    <br><br>
-    <label>Kategorie</label><br>
-    <select name="category">
-        <option value="">bitte wählen</option>
-        <?php foreach ($allowed_categories as $c): ?>
-            <option value="<?php echo e($c); ?>" <?php echo ($category === $c) ? "selected" : ""; ?>>
-                <?php echo e($c); ?>
-            </option>
-        <?php endforeach; ?>
-    </select>
-    <br><span style="color:red;"><?php echo e($category_err); ?></span>
-    <br><br>
-    <hr>
-    <h3>Optional: Stimmung</h3>
-    <label>Stimmungswert (1–10)</label><br>
-    <input type="number" name="mood_value" min="1" max="10" value="<?php echo e($mood_value); ?>">
-    <br><span style="color:red;"><?php echo e($mood_err); ?></span>
-    <br><br>
-    <label>Notiz (optional)</label><br>
-    <input type="text" name="mood_note" value="<?php echo e($mood_note); ?>">
-    <br><br>
-    <input type="submit" value="Speichern">
-    <a href="<?php echo e($return_url); ?>">Abbrechen</a>
-</form>
+<div class="container">
+    <div class="card">
+        <h1>Aktivität bearbeiten</h1>
+        <p>
+            <a href="<?php echo e($return_url); ?>">← Zurück</a>
+        </p>
+        <?php if ($db_err !== ""): ?>
+            <p class="msg err"><strong><?php echo e($db_err); ?></strong></p>
+        <?php endif; ?>
+        <form method="post" action="<?php echo e($_SERVER["REQUEST_URI"]); ?>">
+            <label>Aktivitätenname</label><br>
+            <input type="text" name="title" value="<?php echo e($title); ?>">
+            <br><span style="color:red;"><?php echo e($t_err); ?></span>
+            <br><br>
+            <label>Beschreibung</label><br>
+            <input type="text" name="desc" value="<?php echo e($desc); ?>">
+            <br><span style="color:red;"><?php echo e($desc_err); ?></span>
+            <br><br>
+            <label>Datum</label><br>
+            <input type="date" name="date" value="<?php echo e($date); ?>">
+            <br><span style="color:red;"><?php echo e($date_err); ?></span>
+            <br><br>
+            <label>Kategorie</label><br>
+            <select name="category">
+                <option value="">bitte wählen</option>
+                <?php foreach ($allowed_categories as $c): ?>
+                    <option value="<?php echo e($c); ?>" <?php echo ($category === $c) ? "selected" : ""; ?>>
+                        <?php echo e($c); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <br><span style="color:red;"><?php echo e($category_err); ?></span>
+            <br><br>
+            <hr>
+            <h3>Optional: Stimmung</h3>
+            <label>Stimmungswert (1–10)</label><br>
+            <input type="number" name="mood_value" min="1" max="10" value="<?php echo e($mood_value); ?>">
+            <br><span style="color:red;"><?php echo e($mood_err); ?></span>
+            <br><br>
+            <label>Notiz (optional)</label><br>
+            <input type="text" name="mood_note" value="<?php echo e($mood_note); ?>">
+            <br><br>
+            <input type="submit" value="Speichern">
+            <a href="<?php echo e($return_url); ?>">Abbrechen</a>
+        </form>
+    </div>
+</div>
 </body>
 </html>

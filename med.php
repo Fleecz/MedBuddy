@@ -142,17 +142,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_plan'])) {
     }
 }
 ?>
+<link rel="stylesheet" href="styles.css">
+<div class="container">
+<div class="card">
 <h1>Einnahmeplan erstellen</h1>
 
 <a href="eplan.php"><button>Medikamentenübersicht</button></a>
 <a href="index.php"><button>Zurück zur Startseite</button></a>
 
 <?php if ($saved): ?>
-<p>Plan gespeichert.</p>
+<p class="msg ok">Plan gespeichert.</p>
 <?php endif; ?>
 
 <?php if ($message !== ''): ?>
-<p><?php echo e($message); ?></p>
+<p class="msg err"><?php echo e($message); ?></p>
 <?php endif; ?>
 
 <form method="get" action="">
@@ -210,3 +213,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_plan'])) {
     <button type="submit" name="save_plan" value="1">Plan speichern</button>
 
 </form>
+</div>
+</div>

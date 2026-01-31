@@ -107,6 +107,9 @@ if ($resWW) mysqli_free_result($resWW);
 mysqli_stmt_close($stmtWW);
 ?>
 
+<link rel="stylesheet" href="styles.css">
+<div class="container">
+<div class="card">
 <h1>Mein Einnahmeplan</h1>
 
 <p>
@@ -202,4 +205,5 @@ mysqli_stmt_close($stmtWW);
     </ul>
     
 <?php endif; ?>
-
+</div>
+</div>
