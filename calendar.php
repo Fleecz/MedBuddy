@@ -91,8 +91,6 @@ $next = (clone $firstOfMonth)->modify("+1 month")->format("Y-m");
 <head>
     <meta charset="UTF-8">
     <title>Kalender</title>
-    <link rel="stylesheet" href="styles.css">
-    <!--temporäres Styleshheet bis Bootstrap-->
     <style>
         body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 20px; }
         nav a { margin-right: 12px; }

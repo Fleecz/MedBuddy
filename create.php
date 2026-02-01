@@ -14,12 +14,25 @@ $descriptionError = "";
 $activityCategory = "";
 $categoryError = "";
 $activityDate = "";
+$activityDateDb = "";
 $dateError = "";
 $moodScore = "";
 $moodNote = "";
 $moodError = "";
 $allowed_categories = ["Bewegung", "Entspannung", "Soziales", "Selbstfürsorge"];
 $errorMessage = "";
+function parse_date_input(string $input): ?DateTime {
+    $input = trim($input);
+    $dt = DateTime::createFromFormat("d.m.Y", $input);
+    if ($dt && $dt->format("d.m.Y") === $input) {
+        return $dt;
+    }
+    $dt = DateTime::createFromFormat("Y-m-d", $input);
+    if ($dt && $dt->format("Y-m-d") === $input) {
+        return $dt;
+    }
+    return null;
+}
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $input_title = post_str("title");
     if ($input_title === "") {
@@ -37,7 +50,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if ($input_date === "") {
         $dateError = "Bitte gib ein Datum ein.";
     } else {
-        $activityDate = $input_date;
+        $dt = parse_date_input($input_date);
+        if ($dt === null) {
+            $dateError = "Bitte Datum im Format TT.MM.JJJJ eingeben.";
+        } else {
+            $activityDate = $dt->format("d.m.Y");
+            $activityDateDb = $dt->format("Y-m-d");
+        }
     }
     $input_category = post_str("category");
     if ($input_category === "" || !in_array($input_category, $allowed_categories, true)) {
@@ -65,7 +84,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             if ($stmtMood = mysqli_prepare($link, $sqlMood)) {
                 $mv   = (int)$moodScore;
                 $note = ($moodNote === "") ? null : $moodNote;
-                mysqli_stmt_bind_param($stmtMood, "isis", $currentUserId, $activityDate, $mv, $note);
+                mysqli_stmt_bind_param($stmtMood, "isis", $currentUserId, $activityDateDb, $mv, $note);
 
                 if (mysqli_stmt_execute($stmtMood)) {
                     $stimmungseintrag_id = (int)mysqli_insert_id($link);
@@ -82,7 +101,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $sql = "INSERT INTO `aktivität` (`benutzer_id`, `titel`, `beschreibung`, `datum`, `category`, `stimmungseintrag_id`)
                         VALUES (?, ?, ?, ?, ?, NULL)";
                 if ($stmt = mysqli_prepare($link, $sql)) {
-                    mysqli_stmt_bind_param($stmt, "issss", $currentUserId, $activityTitle, $activityDescription, $activityDate, $activityCategory);
+                    mysqli_stmt_bind_param($stmt, "issss", $currentUserId, $activityTitle, $activityDescription, $activityDateDb, $activityCategory);
                     if (mysqli_stmt_execute($stmt)) {
                         mysqli_stmt_close($stmt);
                         mysqli_close($link);
@@ -98,7 +117,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $sql = "INSERT INTO `aktivität` (`benutzer_id`, `titel`, `beschreibung`, `datum`, `category`, `stimmungseintrag_id`)
                         VALUES (?, ?, ?, ?, ?, ?)";
                 if ($stmt = mysqli_prepare($link, $sql)) {
-                    mysqli_stmt_bind_param($stmt, "issssi", $currentUserId, $activityTitle, $activityDescription, $activityDate, $activityCategory, $stimmungseintrag_id);
+                    mysqli_stmt_bind_param($stmt, "issssi", $currentUserId, $activityTitle, $activityDescription, $activityDateDb, $activityCategory, $stimmungseintrag_id);
                     if (mysqli_stmt_execute($stmt)) {
                         mysqli_stmt_close($stmt);
                         mysqli_close($link);
@@ -138,7 +157,7 @@ mysqli_close($link);
     <br><span style="color:red;"><?php echo e($descriptionError); ?></span>
     <br><br>
     <label>Datum</label><br>
-    <input type="date" name="date" value="<?php echo e($activityDate); ?>">
+    <input type="text" name="date" value="<?php echo e($activityDate); ?>" placeholder="TT.MM.JJJJ" pattern="\d{2}\.\d{2}\.\d{4}" inputmode="numeric">
     <br><span style="color:red;"><?php echo e($dateError); ?></span><br><br>
     <label>Kategorie</label><br>
     <select name="category">

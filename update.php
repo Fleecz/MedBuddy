@@ -48,11 +48,28 @@ $allowed_categories = ["Bewegung", "Entspannung", "Soziales", "Selbstfürsorge"]
 $title = (string)($aktivitaet["titel"] ?? "");
 $desc  = (string)($aktivitaet["beschreibung"] ?? "");
 $category = (string)($aktivitaet["category"] ?? "");
-$date  = (string)($aktivitaet["datum"] ?? "");
+$date_db  = (string)($aktivitaet["datum"] ?? "");
+$date = $date_db;
+$dt_init = DateTime::createFromFormat("Y-m-d", $date_db);
+if ($dt_init && $dt_init->format("Y-m-d") === $date_db) {
+    $date = $dt_init->format("d.m.Y");
+}
 $mood_value = ($aktivitaet["stimmungswert"] === null) ? "" : (string)$aktivitaet["stimmungswert"];
 $mood_note  = (string)($aktivitaet["stimmung_notiz"] ?? "");
 $t_err = $desc_err = $category_err = $date_err = $mood_err = "";
 $db_err = "";
+function parse_date_input(string $input): ?DateTime {
+    $input = trim($input);
+    $dt = DateTime::createFromFormat("d.m.Y", $input);
+    if ($dt && $dt->format("d.m.Y") === $input) {
+        return $dt;
+    }
+    $dt = DateTime::createFromFormat("Y-m-d", $input);
+    if ($dt && $dt->format("Y-m-d") === $input) {
+        return $dt;
+    }
+    return null;
+}
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $input_title = post_str("title");
     if ($input_title === "") {
@@ -70,7 +87,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if ($input_date === "") {
         $date_err = "Bitte gib ein Datum ein.";
     } else {
-        $date = $input_date;
+        $dt = parse_date_input($input_date);
+        if ($dt === null) {
+            $date_err = "Bitte Datum im Format TT.MM.JJJJ eingeben.";
+        } else {
+            $date = $dt->format("d.m.Y");
+            $date_db = $dt->format("Y-m-d");
+        }
     }
     $input_category = post_str("category");
     if ($input_category === "" || !in_array($input_category, $allowed_categories, true)) {
@@ -102,7 +125,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $sqlMoodUpd = "UPDATE `stimmungseintrag` SET `datum` = ?, `stimmungswert` = ?, `notiz` = ? WHERE `stimmungseintrag_id` = ? AND `benutzer_id` = ?";
                     $stmtMoodUpd = mysqli_prepare($link, $sqlMoodUpd);
                     if (!$stmtMoodUpd) throw new Exception("Fehler beim Vorbereiten (Stimmung-Update): " . mysqli_error($link));
-                    mysqli_stmt_bind_param($stmtMoodUpd, "sisii", $date, $mv, $note, $existing_mood_id, $benutzer_id);
+                    mysqli_stmt_bind_param($stmtMoodUpd, "sisii", $date_db, $mv, $note, $existing_mood_id, $benutzer_id);
                     if (!mysqli_stmt_execute($stmtMoodUpd)) {
                         throw new Exception("DB-Fehler beim Aktualisieren der Stimmung: " . mysqli_stmt_error($stmtMoodUpd));
                     }
@@ -111,7 +134,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $sqlMoodIns = "INSERT INTO `stimmungseintrag` (`benutzer_id`, `datum`, `uhrzeit`, `stimmungswert`, `notiz`) VALUES (?, ?, CURTIME(), ?, ?)";
                     $stmtMoodIns = mysqli_prepare($link, $sqlMoodIns);
                     if (!$stmtMoodIns) throw new Exception("Fehler beim Vorbereiten (Stimmung-Insert): " . mysqli_error($link));
-                    mysqli_stmt_bind_param($stmtMoodIns, "isis", $benutzer_id, $date, $mv, $note);
+                    mysqli_stmt_bind_param($stmtMoodIns, "isis", $benutzer_id, $date_db, $mv, $note);
                     if (!mysqli_stmt_execute($stmtMoodIns)) {
                         throw new Exception("DB-Fehler beim Speichern der Stimmung: " . mysqli_stmt_error($stmtMoodIns));
                     }
@@ -135,12 +158,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $sqlUpd = "UPDATE `aktivität` SET `titel` = ?, `beschreibung` = ?, `datum` = ?, `category` = ?, `stimmungseintrag_id` = NULL WHERE `aktivität_id` = ? AND `benutzer_id` = ?";
                 $stmtUpd = mysqli_prepare($link, $sqlUpd);
                 if (!$stmtUpd) throw new Exception("Fehler beim Vorbereiten (Aktivität-Update): " . mysqli_error($link));
-                mysqli_stmt_bind_param($stmtUpd, "ssssii", $title, $desc, $date, $category, $aktivitaet_id, $benutzer_id);
+                mysqli_stmt_bind_param($stmtUpd, "ssssii", $title, $desc, $date_db, $category, $aktivitaet_id, $benutzer_id);
             } else {
                 $sqlUpd = "UPDATE `aktivität` SET `titel` = ?, `beschreibung` = ?, `datum` = ?, `category` = ?, `stimmungseintrag_id` = ? WHERE `aktivität_id` = ? AND `benutzer_id` = ?";
                 $stmtUpd = mysqli_prepare($link, $sqlUpd);
                 if (!$stmtUpd) throw new Exception("Fehler beim Vorbereiten (Aktivität-Update): " . mysqli_error($link));
-                mysqli_stmt_bind_param($stmtUpd, "ssssiii", $title, $desc, $date, $category, $new_mood_id, $aktivitaet_id, $benutzer_id);
+                mysqli_stmt_bind_param($stmtUpd, "ssssiii", $title, $desc, $date_db, $category, $new_mood_id, $aktivitaet_id, $benutzer_id);
             }
             if (!mysqli_stmt_execute($stmtUpd)) {
                 throw new Exception("DB-Fehler beim Aktualisieren der Aktivität: " . mysqli_stmt_error($stmtUpd));
@@ -188,7 +211,7 @@ mysqli_close($link);
             <?php endif; ?>
             <br>
             <label>Datum</label><br>
-            <input type="date" name="date" value="<?php echo e($date); ?>">
+            <input type="text" name="date" value="<?php echo e($date); ?>" placeholder="TT.MM.JJJJ" pattern="\d{2}\.\d{2}\.\d{4}" inputmode="numeric">
             <?php if ($date_err !== ""): ?>
                 <br><span class="msg err"><?php echo e($date_err); ?></span>
             <?php endif; ?>
