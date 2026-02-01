@@ -68,10 +68,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="post">
             <label>Username oder Email</label><br>
             <input type="text" name="username" value="<?php echo e($username); ?>"><br>
-            <span style="color:red;"><?php echo e($username_err); ?></span><br><br>
+            <?php if ($username_err !== ''): ?>
+                <span class="msg err"><?php echo e($username_err); ?></span><br>
+            <?php endif; ?>
+            <br>
             <label>Passwort</label><br>
             <input type="password" name="password"><br>
-            <span style="color:red;"><?php echo e($password_err); ?></span><br><br>
+            <?php if ($password_err !== ''): ?>
+                <span class="msg err"><?php echo e($password_err); ?></span><br>
+            <?php endif; ?>
+            <br>
             <input type="submit" value="Login"><br><br>
             Noch kein Profil? <a href="register.php">Hier registrieren</a>
         </form>

@@ -83,16 +83,24 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
             <form action="<?php echo e($_SERVER["PHP_SELF"]); ?>" method="post">
             <label>Name</label>
             <input type="text" name="username" class="<?php echo (!empty($username_err)) ? 'is-invalid' : ''; ?>" value="<?php echo e($username); ?>">
-            <span><?php echo $username_err; ?></span>
+            <?php if ($username_err !== ''): ?>
+                <span class="msg err"><?php echo $username_err; ?></span>
+            <?php endif; ?>
             <label>Email</label>
             <input type="email" name="email" class="<?php echo (!empty($email_err)) ? 'is-invalid' : ''; ?>" value="<?php echo e($email); ?>">
-            <span><?php echo $email_err; ?></span>
+            <?php if ($email_err !== ''): ?>
+                <span class="msg err"><?php echo $email_err; ?></span>
+            <?php endif; ?>
             <label>Passwort</label>
             <input type="password" name="password" class="<?php echo (!empty($password_err)) ? 'is-invalid' : ''; ?>" value="<?php echo e($password); ?>">
-            <span><?php echo $password_err; ?></span>
+            <?php if ($password_err !== ''): ?>
+                <span class="msg err"><?php echo $password_err; ?></span>
+            <?php endif; ?>
             <label>Passwort bestätigen</label>
             <input type="password" name="confirm_password" class="<?php echo (!empty($confirm_password_err)) ? 'is-invalid' : ''; ?>" value="<?php echo e($confirm_password); ?>">
-            <span><?php echo $confirm_password_err; ?></span>
+            <?php if ($confirm_password_err !== ''): ?>
+                <span class="msg err"><?php echo $confirm_password_err; ?></span>
+            <?php endif; ?>
             <input type="submit" value="Bestätigen">
             <input type="reset" value="Zurücksetzen">
             <p>Hast du bereits einen Account? <a href="login.php">Login hier</a>.</p>

@@ -177,16 +177,22 @@ mysqli_close($link);
         <form method="post" action="<?php echo e($_SERVER["REQUEST_URI"]); ?>">
             <label>Aktivitätenname</label><br>
             <input type="text" name="title" value="<?php echo e($title); ?>">
-            <br><span style="color:red;"><?php echo e($t_err); ?></span>
-            <br><br>
+            <?php if ($t_err !== ""): ?>
+                <br><span class="msg err"><?php echo e($t_err); ?></span>
+            <?php endif; ?>
+            <br>
             <label>Beschreibung</label><br>
             <input type="text" name="desc" value="<?php echo e($desc); ?>">
-            <br><span style="color:red;"><?php echo e($desc_err); ?></span>
-            <br><br>
+            <?php if ($desc_err !== ""): ?>
+                <br><span class="msg err"><?php echo e($desc_err); ?></span>
+            <?php endif; ?>
+            <br>
             <label>Datum</label><br>
             <input type="date" name="date" value="<?php echo e($date); ?>">
-            <br><span style="color:red;"><?php echo e($date_err); ?></span>
-            <br><br>
+            <?php if ($date_err !== ""): ?>
+                <br><span class="msg err"><?php echo e($date_err); ?></span>
+            <?php endif; ?>
+            <br>
             <label>Kategorie</label><br>
             <select name="category">
                 <option value="">bitte wählen</option>
@@ -196,14 +202,18 @@ mysqli_close($link);
                     </option>
                 <?php endforeach; ?>
             </select>
-            <br><span style="color:red;"><?php echo e($category_err); ?></span>
-            <br><br>
+            <?php if ($category_err !== ""): ?>
+                <br><span class="msg err"><?php echo e($category_err); ?></span>
+            <?php endif; ?>
+            <br>
             <hr>
             <h3>Optional: Stimmung</h3>
             <label>Stimmungswert (1–10)</label><br>
             <input type="number" name="mood_value" min="1" max="10" value="<?php echo e($mood_value); ?>">
-            <br><span style="color:red;"><?php echo e($mood_err); ?></span>
-            <br><br>
+            <?php if ($mood_err !== ""): ?>
+                <br><span class="msg err"><?php echo e($mood_err); ?></span>
+            <?php endif; ?>
+            <br>
             <label>Notiz (optional)</label><br>
             <input type="text" name="mood_note" value="<?php echo e($mood_note); ?>">
             <br><br>
