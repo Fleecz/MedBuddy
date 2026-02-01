@@ -1,4 +1,7 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 session_start();
 require_once __DIR__ . '/lib/helpers.php';
 require_once __DIR__ . '/lib/config.php';
@@ -14,10 +17,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = post_str('username');
     $password = post_str('password');
     if ($username === '') {
-        $username_err = 'Geb deinen Nutzernamen oder deine Email-Adresse ein.';
+        $username_err = 'Gib deinen Nutzernamen oder deine Email-Adresse ein.';
     }
     if ($password === '') {
-        $password_err = 'Geb bitte dein Passwort ein.';
+        $password_err = 'Gib bitte dein Passwort ein.';
     }
     if ($username_err === '' && $password_err === '') {
         $sql = "SELECT benutzer_id, username, email, passwort_hash

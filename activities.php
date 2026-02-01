@@ -82,6 +82,7 @@ $activityResult = mysqli_stmt_get_result($activityStmt);
 <head>
     <meta charset="UTF-8">
     <title>Aktivitäten</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <h1>Aktivitätseinträge</h1>

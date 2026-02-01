@@ -121,6 +121,7 @@ mysqli_close($link);
 <head>
     <meta charset="UTF-8">
     <title>Aktivitätseintrag anlegen</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <h1>Aktivitätseintrag anlegen</h1>
