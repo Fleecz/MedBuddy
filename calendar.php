@@ -54,11 +54,29 @@ while ($row = mysqli_fetch_assoc($resMed)) {
 }
 mysqli_stmt_close($stmtMed);
 $sqlAct = "
-SELECT aktivität_id, titel, category, datum
+SELECT
+    aktivität_id,
+    titel,
+    category,
+    DATE_FORMAT(
+        COALESCE(
+            STR_TO_DATE(datum, '%Y-%m-%d'),
+            STR_TO_DATE(datum, '%d.%m.%Y')
+        ),
+        '%Y-%m-%d'
+    ) AS datum
 FROM `aktivität`
 WHERE benutzer_id = ?
-  AND datum BETWEEN ? AND ?
-ORDER BY datum ASC, aktivität_id ASC
+  AND COALESCE(
+        STR_TO_DATE(datum, '%Y-%m-%d'),
+        STR_TO_DATE(datum, '%d.%m.%Y')
+      ) BETWEEN ? AND ?
+ORDER BY
+  COALESCE(
+    STR_TO_DATE(datum, '%Y-%m-%d'),
+    STR_TO_DATE(datum, '%d.%m.%Y')
+  ) ASC,
+  aktivität_id ASC
 ";
 $stmtAct = mysqli_prepare($link, $sqlAct);
 if (!$stmtAct) die("SQL-Fehler (Akt): " . h(mysqli_error($link)));
