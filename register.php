@@ -1,8 +1,14 @@
 <?php
 require_once __DIR__ . '/lib/helpers.php';
 require_once __DIR__ . '/lib/config.php';
-$username = $email = $password = $confirm_password = "";
-$username_err = $email_err = $password_err = $confirm_password_err = "";
+$username = "";
+$email = "";
+$password = "";
+$confirm_password = "";
+$username_err = "";
+$email_err = "";
+$password_err = "";
+$confirm_password_err = "";
 if($_SERVER["REQUEST_METHOD"] == "POST"){
     if(empty(post_str("username"))){
         $username_err = "Bitte geb deinen Nutzernamen nach dem Schema <Vorname.Nachname> ein";

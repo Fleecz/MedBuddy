@@ -17,7 +17,6 @@ require_login();
     <a href="calendar.php"><button>Kalender</button></a>
     <a href="vertrauenspersonen.php"><button>Vertrauenspersonen</button></a>
     <a href="logout.php"><button>Logout</button></a>
-    
 </nav>
 <h1>Dashboard</h1>
 <p>Willkommen bei MedBuddy.</p>

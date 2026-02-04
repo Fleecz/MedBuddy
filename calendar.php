@@ -7,18 +7,18 @@ $benutzer_id = (int)($_SESSION["benutzer_id"] ?? 0);
 if ($benutzer_id <= 0) {
     die("benutzer_id fehlt in der Session.");
 }
-function h(string $s): string { return e($s); }
-$ym = get_str("ym", date("Y-m"));
-if (!preg_match('/^\d{4}-\d{2}$/', $ym)) $ym = date("Y-m");
-$year  = (int)substr($ym, 0, 4);
-$month = (int)substr($ym, 5, 2);
+//Datum aus URL extrahieren
+$monthKey = get_str("ym", date("Y-m"));
+if (!preg_match('/^\d{4}-\d{2}$/', $monthKey)) $monthKey = date("Y-m");
+$year  = (int)substr($monthKey, 0, 4);
+$month = (int)substr($monthKey, 5, 2);
 $firstOfMonth = DateTime::createFromFormat("Y-m-d", sprintf("%04d-%02d-01", $year, $month));
 if (!$firstOfMonth) $firstOfMonth = new DateTime("first day of this month");
 $daysInMonth   = (int)$firstOfMonth->format("t");
 $startWeekday  = (int)$firstOfMonth->format("N");
-$selected = get_str("day", "");
-$selected = ($selected === "") ? null : $selected;
-if ($selected !== null && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $selected)) $selected = null;
+$selectedDay = get_str("day", "");
+$selectedDay = ($selectedDay === "") ? null : $selectedDay;
+if ($selectedDay !== null && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $selectedDay)) $selectedDay = null;
 $monthStart = $firstOfMonth->format("Y-m-01");
 $monthEndDt = clone $firstOfMonth;
 $monthEndDt->modify("last day of this month");
@@ -44,7 +44,7 @@ WHERE p.benutzer_id = ?
 ORDER BY pu.uhrzeit ASC, m.mname ASC
 ";
 $stmtMed = mysqli_prepare($link, $sqlMed);
-if (!$stmtMed) die("SQL-Fehler (Med): " . h(mysqli_error($link)));
+if (!$stmtMed) die("SQL-Fehler (Med): " . e(mysqli_error($link)));
 mysqli_stmt_bind_param($stmtMed, "iss", $benutzer_id, $monthEnd, $monthStart);
 mysqli_stmt_execute($stmtMed);
 $resMed = mysqli_stmt_get_result($stmtMed);
@@ -79,7 +79,7 @@ ORDER BY
   aktivität_id ASC
 ";
 $stmtAct = mysqli_prepare($link, $sqlAct);
-if (!$stmtAct) die("SQL-Fehler (Akt): " . h(mysqli_error($link)));
+if (!$stmtAct) die("SQL-Fehler (Akt): " . e(mysqli_error($link)));
 mysqli_stmt_bind_param($stmtAct, "iss", $benutzer_id, $monthStart, $monthEnd);
 mysqli_stmt_execute($stmtAct);
 $resAct = mysqli_stmt_get_result($stmtAct);
@@ -101,6 +101,7 @@ function plans_for_day(array $plans, string $day): array {
     }
     return $out;
 }
+//Navigation zu anderen Monaten
 $prev = (clone $firstOfMonth)->modify("-1 month")->format("Y-m");
 $next = (clone $firstOfMonth)->modify("+1 month")->format("Y-m");
 ?>
@@ -142,11 +143,11 @@ $next = (clone $firstOfMonth)->modify("+1 month")->format("Y-m");
     <a href="logout.php">Logout</a>
 </nav>
 <div class="topbar">
-    <h1 style="margin: 10px 0;"><?php echo h($firstOfMonth->format("F Y")); ?></h1>
+    <h1 style="margin: 10px 0;"><?php echo e($firstOfMonth->format("F Y")); ?></h1>
     <div class="monthnav">
-        <a href="calendar.php?ym=<?php echo h($prev); ?>">←</a>
-        <a href="calendar.php?ym=<?php echo h(date("Y-m")); ?>">Heute</a>
-        <a href="calendar.php?ym=<?php echo h($next); ?>">→</a>
+        <a href="calendar.php?ym=<?php echo e($prev); ?>">←</a>
+        <a href="calendar.php?ym=<?php echo e(date("Y-m")); ?>">Heute</a>
+        <a href="calendar.php?ym=<?php echo e($next); ?>">→</a>
     </div>
 </div>
 <div class="wrap">
@@ -165,10 +166,10 @@ $next = (clone $firstOfMonth)->modify("+1 month")->format("Y-m");
                 $dayActs  = $actsByDay[$dayStr] ?? [];
                 $countMed = count($dayPlans);
                 $countAct = count($dayActs);
-                $isSelected = ($selected === $dayStr);
+                $isSelected = ($selectedDay === $dayStr);
                 $cls = "day" . ($isSelected ? " selected" : "");
                 echo '<div class="'. $cls .'">';
-                echo '<a href="calendar.php?ym='. h($ym) .'&day='. h($dayStr) .'">';
+                echo '<a href="calendar.php?ym='. e($monthKey) .'&day='. e($dayStr) .'">';
                 echo '<div class="num">';
                 echo '<strong>'. (int)$d .'</strong>';
                 echo '<span class="pill">'. $countMed .'🩺 '. $countAct .'🏃</span>';
@@ -176,12 +177,12 @@ $next = (clone $firstOfMonth)->modify("+1 month")->format("Y-m");
                 $preview = [];
                 if ($countMed > 0) {
                     $p0 = $dayPlans[0];
-                    $preview[] = h(($p0["medikament_name"] ?? "Medikament"));
+                    $preview[] = e(($p0["medikament_name"] ?? "Medikament"));
                 }
                 $shownActs = 0;
                 foreach ($dayActs as $a) {
                     if ($shownActs >= 2) break;
-                    $preview[] = h($a["titel"] ?? "Aktivität");
+                    $preview[] = e($a["titel"] ?? "Aktivität");
                     $shownActs++;
                 }
                 if (count($preview) === 0) {
@@ -201,14 +202,14 @@ $next = (clone $firstOfMonth)->modify("+1 month")->format("Y-m");
         </div>
     </div>
     <aside class="side">
-        <?php if ($selected === null): ?>
+        <?php if ($selectedDay === null): ?>
             <h2>Tag auswählen</h2>
             <p class="empty">Klicke auf einen Tag, um konkrete Einträge zu sehen.</p>
         <?php else: ?>
-            <h2><?php echo h($selected); ?></h2>
+            <h2><?php echo e($selectedDay); ?></h2>
             <?php
-            $selPlans = plans_for_day($plans, $selected);
-            $selActs  = $actsByDay[$selected] ?? [];
+            $selPlans = plans_for_day($plans, $selectedDay);
+            $selActs  = $actsByDay[$selectedDay] ?? [];
             ?>
             <h3 style="margin-bottom:6px;">Einnahmen</h3>
             <?php if (count($selPlans) === 0): ?>
@@ -225,7 +226,7 @@ $next = (clone $firstOfMonth)->modify("+1 month")->format("Y-m");
                         if ($f !== "")   $line .= " (" . $f . ")";
                         if ($dose !== "") $line .= " – " . $dose;
                         ?>
-                        <li><?php echo h($line); ?></li>
+                        <li><?php echo e($line); ?></li>
                     <?php endforeach; ?>
                 </ul>
             <?php endif; ?>
@@ -240,7 +241,7 @@ $next = (clone $firstOfMonth)->modify("+1 month")->format("Y-m");
                         $cat   = trim((string)($a["category"] ?? ""));
                         $line  = ($title !== "" ? $title : "Aktivität") . ($cat !== "" ? " – " . $cat : "");
                         ?>
-                        <li><?php echo h($line); ?></li>
+                        <li><?php echo e($line); ?></li>
                     <?php endforeach; ?>
                 </ul>
             <?php endif; ?>

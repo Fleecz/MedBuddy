@@ -1,22 +1,15 @@
 <?php
+//Start PHP-Session, Hilfunctions & Config laden
 session_start();
 require_once __DIR__ . '/lib/helpers.php';
 require_once __DIR__ . '/lib/config.php';
+//Prüfen auf eingeloggt, Nutzer_ID aus Session holen
 require_login();
 $userId = (int)($_SESSION["benutzer_id"] ?? 0);
 if ($userId <= 0) {
     die("benutzer_id fehlt in der Session.");
 }
-function column_exists(mysqli $link, string $table, string $column): bool {
-    $table_esc = mysqli_real_escape_string($link, $table);
-    $col_esc   = mysqli_real_escape_string($link, $column);
-    $sql = "SHOW COLUMNS FROM `$table_esc` LIKE '$col_esc'";
-    $res = mysqli_query($link, $sql);
-    if (!$res) return false;
-    $ok = (mysqli_num_rows($res) > 0);
-    mysqli_free_result($res);
-    return $ok;
-}
+//Delete hier aus Anfangsphase noch in Datei, Bearbeiten und Anlegen ausgelagert.
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $deleteIdRaw = post_str("delete_id");
     if ($deleteIdRaw !== "" && ctype_digit($deleteIdRaw)) {
@@ -27,12 +20,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             mysqli_stmt_execute($stmtDel);
             mysqli_stmt_close($stmtDel);
         }
-        $qs = [];
-        if (isset($_GET["status"])) $qs["status"] = get_str("status");
-        if (isset($_GET["sort"]))   $qs["sort"]   = get_str("sort");
-        redirect_to("index.php", $qs);
     }
 }
+//verschieden schreibweisen synchronisieren => Robustheit
 $status = get_str("status", "active");
 $mapStatus = [
   "active"   => "active",
@@ -49,17 +39,13 @@ $orderBy = ($sort === "date_asc")
     ? "$activityDate ASC, a.aktivität_id ASC"
     : "$activityDate DESC, a.aktivität_id DESC";
 $whereStatus = ($status === "archiv") ? "$activityDate < CURDATE()" : "$activityDate >= CURDATE()";
-$has_time_col = column_exists($link, "aktivität", "uhrzeit");
-$timeSelect = $has_time_col ? ", a.uhrzeit" : "";
-$timeHeader = $has_time_col ? "<th>Uhrzeit</th>" : "";
 $sql = "
 SELECT
     a.aktivität_id,
     a.titel,
     a.beschreibung,
     a.category,
-    a.datum
-    $timeSelect,
+    a.datum,
     a.stimmungseintrag_id,
     s.stimmungswert,
     s.notiz AS stimmung_notiz
@@ -112,7 +98,6 @@ $activityResult = mysqli_stmt_get_result($activityStmt);
         <th>Beschreibung</th>
         <th>Kategorie</th>
         <th>Datum</th>
-        <?php echo $timeHeader; ?>
         <th>Stimmung</th>
         <th>Aktionen</th>
     </tr>
@@ -126,10 +111,6 @@ $activityResult = mysqli_stmt_get_result($activityStmt);
             $beschreibung = e($row["beschreibung"] ?? "");
             $category = e($row["category"] ?? "");
             $datum = e($row["datum"] ?? "");
-            $uhrzeitCell = "";
-            if ($has_time_col) {
-                $uhrzeitCell = "<td>" . e($row["uhrzeit"] ?? "") . "</td>";
-            }
             $stimmungHtml = "-";
             $sw = $row["stimmungswert"];
             if ($sw !== null && (string)$sw !== "") {
@@ -145,7 +126,6 @@ $activityResult = mysqli_stmt_get_result($activityStmt);
                 <td><?php echo $beschreibung; ?></td>
                 <td><?php echo $category; ?></td>
                 <td><?php echo $datum; ?></td>
-                <?php echo $uhrzeitCell; ?>
                 <td><?php echo $stimmungHtml; ?></td>
                 <td>
                     <a href="update.php?id=<?php echo $id; ?>">Bearbeiten</a>
@@ -158,7 +138,7 @@ $activityResult = mysqli_stmt_get_result($activityStmt);
         <?php endwhile; ?>
     <?php else: ?>
         <tr>
-            <td colspan="<?php echo $has_time_col ? "7" : "6"; ?>">Keine Aktivitäten gefunden.</td>
+            <td>Keine Aktivitäten gefunden.</td>
         </tr>
     <?php endif; ?>
     </tbody>
